@@ -644,6 +644,77 @@
     }
     .demo-footer p { margin: 5px 0 0; color: #c6d8ef; }
 
+
+    .identity-card {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+    }
+
+    .identity-card h4 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 16px;
+    }
+
+    .identity-card p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .identity-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .identity-grid label {
+      display: grid;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .identity-grid input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 11px;
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .identity-grid input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 4px rgba(244, 123, 32, 0.12);
+    }
+
+    .identity-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .identity-preview {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #f1f6fc;
+      border: 1px dashed #b7c8dc;
+      border-radius: 14px;
+      color: var(--navy);
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+
     @media (max-width: 980px) {
       .hero, .journey-board { grid-template-columns: 1fr; }
       .grid-3, .grid-4, .process-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -678,6 +749,7 @@
       </a>
       <nav aria-label="Navegación principal">
         <a href="#ordenes" onclick="setQ('orden-critica','ordenes')">Órdenes</a>
+        <a href="#identidad" onclick="setQ('identidad','identidad')">Identidad</a>
         <a href="#conocimiento" onclick="setQ('knowledge','conocimiento')">Conocimiento</a>
         <a href="#conavegacion" onclick="setQ('conavegacion','conavegacion')">Conavegación</a>
         <a href="#seguimiento" onclick="setQ('tracking','seguimiento')">Seguimiento digital</a>
@@ -717,6 +789,36 @@
         <div class="prompt-box" id="criticalPrompt">
           <small>Mensaje para usar en Messenger</small>
           Hola, necesito el estatus de la OC-78451. Si no recibimos confirmación hoy, nuestra línea se detiene mañana a las 6:00 a.m.
+        </div>
+
+        <div class="identity-card" id="identidad">
+          <h4>Identidad del contacto B2B</h4>
+          <p>Para que el agente no reciba un “Guest”, la demo envía nombre, email, teléfono y empresa como contexto previo al abrir Messenger.</p>
+          <div class="identity-grid">
+            <label>Nombre
+              <input id="identityFirstName" value="Laura" autocomplete="given-name" />
+            </label>
+            <label>Apellido
+              <input id="identityLastName" value="Medina" autocomplete="family-name" />
+            </label>
+            <label>Email
+              <input id="identityEmail" value="laura.medina@motrix-demo.com" autocomplete="email" />
+            </label>
+            <label>Teléfono
+              <input id="identityPhone" value="+525555010784" autocomplete="tel" />
+            </label>
+            <label>Empresa
+              <input id="identityCompany" value="Motrix Automotive" />
+            </label>
+            <label>ID externo
+              <input id="identityExternalId" value="MOTRIX-LAURA-MEDINA" />
+            </label>
+          </div>
+          <div class="identity-actions">
+            <button class="btn btn-navy" onclick="validateIdentity()">Validar identidad demo</button>
+            <button class="btn btn-primary" onclick="startIdentifiedCriticalCase()">Abrir caso identificado</button>
+          </div>
+          <div class="identity-preview" id="identityPreview">Identidad lista para enviar a Genesys.</div>
         </div>
       </aside>
     </section>
@@ -891,6 +993,9 @@
     const DEMO_CONTEXT = {
       customerName: 'Motrix Automotive',
       contactName: 'Laura Medina',
+      contactEmail: 'laura.medina@motrix-demo.com',
+      contactPhone: '+525555010784',
+      externalContactId: 'MOTRIX-LAURA-MEDINA',
       orderId: 'OC-78451',
       productName: 'Arnés eléctrico XH-22',
       orderStatus: 'Pendiente liberación de calidad',
@@ -910,7 +1015,8 @@
       embarques: 'Artículo de logística y embarques',
       conavegacion: 'Solicitud de conavegación',
       tracking: 'Seguimiento digital',
-      'soporte-b2b': 'Soporte B2B especializado'
+      'soporte-b2b': 'Soporte B2B especializado',
+      identidad: 'Identificación del contacto B2B'
     };
 
     function getCurrentQ() {
@@ -1002,16 +1108,58 @@
       showToast('Recorrido digital limpiado para reiniciar la demo.');
     }
 
+    function getIdentityFromForm() {
+      const firstName = (document.getElementById('identityFirstName')?.value || 'Laura').trim();
+      const lastName = (document.getElementById('identityLastName')?.value || 'Medina').trim();
+      const email = (document.getElementById('identityEmail')?.value || DEMO_CONTEXT.contactEmail).trim();
+      const phone = (document.getElementById('identityPhone')?.value || DEMO_CONTEXT.contactPhone).trim();
+      const company = (document.getElementById('identityCompany')?.value || DEMO_CONTEXT.customerName).trim();
+      const externalId = (document.getElementById('identityExternalId')?.value || DEMO_CONTEXT.externalContactId).trim();
+      return {
+        firstName,
+        lastName,
+        contactName: `${firstName} ${lastName}`.trim(),
+        email,
+        phone,
+        company,
+        externalId
+      };
+    }
+
+    function renderIdentityPreview() {
+      const identity = getIdentityFromForm();
+      const preview = document.getElementById('identityPreview');
+      if (!preview) return;
+      preview.textContent = `Contacto: ${identity.contactName}\nEmail: ${identity.email}\nTeléfono: ${identity.phone}\nEmpresa: ${identity.company}\nID externo: ${identity.externalId}`;
+    }
+
+    function validateIdentity() {
+      const identity = getIdentityFromForm();
+      renderIdentityPreview();
+      recordAction('identify_user', `contact=${identity.contactName}; email=${identity.email}; company=${identity.company}`);
+      pushContextToGenesys(true);
+      showToast('Identidad demo enviada como contexto previo a Messenger.');
+    }
+
     function buildGenesysContext(extraIntent) {
       const q = getCurrentQ();
+      const identity = getIdentityFromForm();
       return {
         messaging: {
           customAttributes: {
             q,
             intent: extraIntent || q,
             portalSection: qMap[q] || 'Portal B2B',
-            customerName: DEMO_CONTEXT.customerName,
-            contactName: DEMO_CONTEXT.contactName,
+            customerName: identity.company,
+            organizationName: identity.company,
+            companyName: identity.company,
+            contactName: identity.contactName,
+            firstName: identity.firstName,
+            lastName: identity.lastName,
+            email: identity.email,
+            phone: identity.phone,
+            externalId: identity.externalId,
+            b2bAccountId: 'MOTRIX-001',
             orderId: DEMO_CONTEXT.orderId,
             productName: DEMO_CONTEXT.productName,
             orderStatus: DEMO_CONTEXT.orderStatus,
@@ -1049,13 +1197,22 @@
 
     function openMessengerWithContext(intent) {
       recordAction('open_messenger', `intent=${intent || getCurrentQ()}`);
-      pushContextToGenesys(false);
 
       if (typeof window.Genesys === 'function') {
         try {
-          window.Genesys('command', 'Messenger.open', {},
-            function () { showToast('Messenger abierto con contexto digital.'); },
-            function () { showToast('No se pudo abrir Messenger. Revisa el deployment o dominio permitido.'); }
+          window.Genesys('command', 'Database.set', buildGenesysContext(intent),
+            function () {
+              window.setTimeout(function () {
+                window.Genesys('command', 'Messenger.open', {},
+                  function () { showToast('Messenger abierto con identidad y contexto digital.'); },
+                  function () { showToast('No se pudo abrir Messenger. Revisa el deployment o dominio permitido.'); }
+                );
+              }, 350);
+            },
+            function () {
+              showToast('No se pudo guardar contexto en Messenger. Abriendo chat de todos modos.');
+              window.Genesys('command', 'Messenger.open');
+            }
           );
           return;
         } catch (err) {
@@ -1063,11 +1220,18 @@
           return;
         }
       }
-      showToast('Messenger no está cargado. Pega tu snippet real de Genesys en el <head>.');
+      showToast('Messenger no está cargado. Revisa el snippet de Genesys en el <head>.');
     }
 
     function startCriticalCase() {
       setQ('orden-critica', 'ordenes');
+      copyCriticalPrompt(false);
+      openMessengerWithContext('orden-critica');
+    }
+
+    function startIdentifiedCriticalCase() {
+      setQ('orden-critica', 'ordenes');
+      validateIdentity();
       copyCriticalPrompt(false);
       openMessengerWithContext('orden-critica');
     }
@@ -1134,6 +1298,11 @@
       renderJourney();
       renderLog();
       recordAction('page_view', `Portal cargado; ${window.location.pathname}`);
+      renderIdentityPreview();
+      ['identityFirstName','identityLastName','identityEmail','identityPhone','identityCompany','identityExternalId'].forEach(function(id) {
+        const input = document.getElementById(id);
+        if (input) input.addEventListener('input', renderIdentityPreview);
+      });
       pushContextToGenesys(false);
     });
   </script>
